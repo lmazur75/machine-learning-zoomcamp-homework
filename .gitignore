@@ -205,3 +205,11 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Pythoon virtual environment
+Scripts/
+Lib/
+etc/
+Include/
+share/
+pyvenv.cfg
