@@ -214,3 +214,5 @@ Include/
 share/
 pyvenv.cfg
 *draft*
+*.csv
+test*
