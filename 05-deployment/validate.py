@@ -13,7 +13,7 @@ client = {
 response = requests.post(url, json=client)
 predictions = response.json()
 
-print(f"Status Code: {response.status_code}")
+
 print(predictions)
 if predictions['convert']:
     print('customer is likely to convert')
