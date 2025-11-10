@@ -214,5 +214,6 @@ Include/
 share/
 pyvenv.cfg
 *draft*
-*.csv
+# *.csv
 /test*
+*.pdf
