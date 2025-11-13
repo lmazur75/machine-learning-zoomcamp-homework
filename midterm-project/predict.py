@@ -1,5 +1,6 @@
 import pickle
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict, Any, Literal, Optional
 from pydantic import BaseModel, Field, ConfigDict
 import uvicorn
@@ -20,6 +21,15 @@ class PredictResponse(BaseModel):
     condition: bool
 
 app = FastAPI(title="engine-condition-prediction")
+
+# ✅ CORS must be added immediately after app initialization
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # or ["http://localhost:5500"] if hosting locally
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 with open('model.bin', 'rb') as f_in:
     pipeline = pickle.load(f_in)

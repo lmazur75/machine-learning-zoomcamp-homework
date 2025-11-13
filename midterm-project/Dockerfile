@@ -19,10 +19,10 @@ ENV PATH="/code/.venv/bin:$PATH"
 COPY "pyproject.toml" "uv.lock" ".python-version" ./
 
 # Install dependencies exactly as locked in uv.lock, without updating them
-RUN uv sync --locked
+RUN uv lock && uv sync --locked
 
 # Copy application code and model data into the container
-COPY "predict.py" "pipeline_v2.bin" ./
+COPY "predict.py" "model.bin" ./
 
 # Expose TCP port 9696 so it can be accessed from outside the container
 EXPOSE 9696
