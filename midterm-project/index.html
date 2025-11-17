@@ -130,7 +130,7 @@
       }
 
       try {
-        const response = await fetch("http://10.1.1.16:9696/predict", {
+        const response = await fetch("http://localhost:9696/predict", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data)

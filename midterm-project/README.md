@@ -30,7 +30,7 @@ The project implements a binary classification model using XGBoost, which achiev
 ├── pyproject.toml         # Project dependencies (uv)
 ├── uv.lock               # Locked dependencies
 ├── engine_data.csv       # Dataset
-└── xgboost_engine_model.bin  # Trained model
+└── model.bin             # Trained model
 ```
 
 ## Installation and Setup
@@ -56,8 +56,8 @@ pip install uv
 
 1. **Clone the repository**
 ```bash
-git clone <your-repo-url>
-cd engine-health-prediction
+git clone https://github.com/lmazur75/machine-learning-zoomcamp-homework
+cd machine-learning-zoomcamp-homework/midterm-project
 ```
 
 2. **Create virtual environment and install dependencies**
@@ -75,8 +75,8 @@ uv pip sync
 ### Option 2: Using Docker
 
 ```bash
-docker build -t engine-health-api .
-docker run -p 8000:8000 engine-health-api
+docker build --no-cache --progress=plain -t predict-engine-condition .
+docker run -p 9696:9696 predict-engine-condition
 ```
 
 ## How to Download the Dataset
@@ -104,7 +104,7 @@ python train.py
 This will:
 - Load and preprocess the data
 - Train the XGBoost model with optimized hyperparameters
-- Save the model to `xgboost_engine_model.bin`
+- Save the model to `model.bin`
 - Display training metrics
 
 ### 2. Running the Prediction Service
@@ -112,7 +112,7 @@ This will:
 Start the FastAPI server:
 
 ```bash
-uvicorn predict:app --host 0.0.0.0 --port 8000
+uvicorn predict:app --host 0.0.0.0 --port 9696
 ```
 
 Or for development with auto-reload:
@@ -122,16 +122,16 @@ uvicorn predict:app --reload
 ```
 
 The service will be available at:
-- API: `http://localhost:8000`
-- Interactive docs: `http://localhost:8000/docs`
-- Alternative docs: `http://localhost:8000/redoc`
+- API: `http://localhost:9696`
+- Interactive docs: `http://localhost:9696/docs`
+- Alternative docs: `http://localhost:9696/redoc`
 
 ### 3. Making Predictions
 
 #### Using curl:
 
 ```bash
-curl -X POST http://localhost:8000/predict \
+curl -X POST http://localhost:9696/predict \
   -H "Content-Type: application/json" \
   -d '{
     "engine_rpm": 700,
@@ -157,13 +157,13 @@ data = {
     "coolant_temp": 81.6
 }
 
-response = requests.post('http://localhost:8000/predict', json=data)
+response = requests.post('http://localhost:9696/predict', json=data)
 print(response.json())
 ```
 
 #### Using the Interactive API Documentation:
 
-1. Navigate to `http://localhost:8000/docs`
+1. Navigate to `http://localhost:9696/docs`
 2. Click on the `/predict` endpoint
 3. Click "Try it out"
 4. Enter your test data
@@ -218,19 +218,19 @@ The most important features for prediction (XGBoost):
 ### Build the Docker image:
 
 ```bash
-docker build -t engine-health-api .
+docker build --no-cache --progress=plain -t predict-engine-condition .
 ```
 
 ### Run the container:
 
 ```bash
-docker run -p 8000:8000 engine-health-api
+docker run -p 9696:9696 predict-engine-condition
 ```
 
 ### Test the deployment:
 
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:9696/health
 ```
 
 ## API Endpoints
@@ -259,6 +259,11 @@ curl http://localhost:8000/health
   "lub_oil_temp": 84.1,
   "coolant_temp": 81.6
 }
+```
+### Us index.html for a simple frontend
+
+```
+- Open index.html in your browser and it will send a GET request to http://localhost:9696/predict
 ```
 
 ### Interactive Documentation
@@ -289,25 +294,40 @@ dependencies = [
 ### Dockerfile
 Multi-stage build for optimized container size:
 ```dockerfile
-FROM python:3.9-slim
+# Use the official Python 3.13.5 slim version based on Debian Bookworm as the base image
+FROM python:3.13.5-slim-bookworm
 
-WORKDIR /app
+# Copy the 'uv' and 'uvx' executables from the latest uv image into /bin/ in this image
+# 'uv' is a fast Python package installer and environment manager
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+# Set the working directory inside the container to /code
+# All subsequent commands will be run from here
+WORKDIR /code
 
-# Copy dependency files
-COPY pyproject.toml uv.lock ./
+# Add the virtual environment's bin directory to the PATH so Python tools work globally
+ENV PATH="/code/.venv/bin:$PATH"
 
-# Install dependencies
-RUN uv pip install --system -r pyproject.toml
+# Copy the project configuration files into the container
+# pyproject.toml     → project metadata and dependencies
+# uv.lock            → locked dependency versions (for reproducibility)
+# .python-version    → Python version specification
+COPY "pyproject.toml" "uv.lock" ".python-version" ./
 
-# Copy application files
-COPY train.py predict.py xgboost_engine_model.bin ./
+# Install dependencies exactly as locked in uv.lock, without updating them
+RUN uv lock && uv sync --locked
 
-EXPOSE 8000
+# Copy application code and model data into the container
+COPY "predict.py" "model.bin" ./
 
-CMD ["uvicorn", "predict:app", "--host", "0.0.0.0", "--port", "8000"]
+# Expose TCP port 9696 so it can be accessed from outside the container
+EXPOSE 9696
+
+# Run the application using uvicorn (ASGI server)
+# predict:app → refers to 'app' object inside predict.py
+# --host 0.0.0.0 → listen on all interfaces
+# --port 9696    → listen on port 9696
+ENTRYPOINT ["uvicorn", "predict:app", "--host", "0.0.0.0", "--port", "9696"]
 ```
 
 ## Development
@@ -427,7 +447,7 @@ model = xgb.XGBClassifier(
 model.fit(X_train, y_train)
 
 # Save model
-joblib.dump(model, 'xgboost_engine_model.bin')
+joblib.dump(model, 'model.bin')
 print("Model saved successfully!")
 ```
 
@@ -442,7 +462,7 @@ import numpy as np
 app = FastAPI(title="Engine Health Prediction API")
 
 # Load model
-model = joblib.load('xgboost_engine_model.bin')
+model = joblib.load('model.bin')
 
 class EngineData(BaseModel):
     engine_rpm: float = Field(..., gt=0)
@@ -515,7 +535,7 @@ def predict(data: EngineData):
 
 1. **Model file not found**
    - Ensure you run `train.py` before starting the API
-   - Check that `xgboost_engine_model.bin` exists in the project directory
+   - Check that `model.bin` exists in the project directory
 
 2. **Port already in use**
    - Change the port: `uvicorn predict:app --port 8001`
@@ -547,8 +567,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ### Development Setup
 
 ```bash
-git clone <your-repo-url>
-cd engine-health-prediction
+git clone https://github.com/lmazur75/machine-learning-zoomcamp-homework/tree/main/midterm-project
+cd machine-learning-zoomcamp-homework/midterm-project
 uv venv
 source .venv/bin/activate
 uv pip install -r requirements.txt
