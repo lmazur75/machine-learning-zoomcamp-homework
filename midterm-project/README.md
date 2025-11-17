@@ -260,11 +260,11 @@ curl http://localhost:9696/health
   "coolant_temp": 81.6
 }
 ```
-### Us index.html for a simple frontend
+### Use index.html for a simple frontend
 
-```
 - Open index.html in your browser and it will send a GET request to http://localhost:9696/predict
-```
+
+![alt text](image.png)
 
 ### Interactive Documentation
 - **Swagger UI**: `/docs`
