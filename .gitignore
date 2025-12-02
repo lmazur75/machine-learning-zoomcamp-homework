@@ -215,6 +215,7 @@ share/
 pyvenv.cfg
 *draft*
 # *.csv
-/test*
+test*
 *.pdf
 midterm_project*.ipynb
+08-deep-learning/data/
