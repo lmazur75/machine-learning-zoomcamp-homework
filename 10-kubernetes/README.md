@@ -30,6 +30,7 @@ subscription-service   LoadBalancer   10.96.91.186   <pending>     80:31732/TCP 
 docker@ubuntusrv:~$ kubectl get deployment
 NAME           READY   UP-TO-DATE   AVAILABLE   AGE
 subscription   1/1     1            1           22m
+```
 
 # Q6
 
@@ -78,7 +79,6 @@ spec:
   ports:
   - port: 80
     targetPort: 9696
-
 ```
 
 # Testing the service
